@@ -45,13 +45,13 @@ FILE* trace;
 // Print a memory read record
 VOID RecordMemRead(VOID *ip, VOID *addr, UINT32 size)
 {
-    fprintf(trace, "%p: %8x R %u %p\n", ip, *(UINT32 *)ip, size, addr);
+    fprintf(trace, "%p %8x 0 %u %p\n", ip, *(UINT32 *)ip, size, addr);
 }
 
 // Print a memory write record
 VOID RecordMemWrite(VOID *ip, VOID *addr, UINT32 size)
 {
-    fprintf(trace, "%p: %8x W %u %p\n", ip, *(UINT32 *)ip, size, addr);
+    fprintf(trace, "%p %8x 1 %u %p\n", ip, *(UINT32 *)ip, size, addr);
 }
 
 // Is called for every instruction and instruments reads and writes

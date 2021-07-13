@@ -32,4 +32,4 @@ clean: FORCE
 	make -C ${DIR_CHECK} clean
 	PIN_ROOT="${PIN_ROOT}" make -C ${DIR_TRACE} clean
 
-ORCE:
+FORCE:
