@@ -83,20 +83,49 @@ VOID Instruction(INS ins, VOID* v)
     }
 }
 
-#include <stdlib.h> // system
 #include <unistd.h> // getpid
+#define PATH_STR_LEN (1 << 7)
+#define BUF_SIZE (1 << 16)
+void copyProcMaps(void)
+{
+    FILE *src, *dst;
+    char pathProcMaps[PATH_STR_LEN];
+    sprintf(pathProcMaps, "/proc/%d/maps", getpid());
+    src = fopen(pathProcMaps, "r");
+    if (!src)
+    {
+        fprintf(stderr, "fopen %s failed\n", pathProcMaps);
+        return;
+    }
+    dst = fopen("maps", "w");
+    if (!dst)
+    {
+        fprintf(stderr, "fopen maps failed\n");
+        return;
+    }
+
+    char *buf = (char *)malloc(BUF_SIZE * sizeof(char));
+    size_t in, out;
+    while (1)
+    {
+        in = fread(buf, sizeof(char), BUF_SIZE, src);
+        if (!in)
+            break;
+        out = fwrite(buf, sizeof(char), in, dst);
+        if (!out)
+        {
+            fprintf(stderr, "fwrite failed\n");
+            return;
+        }
+    }
+    fclose(src);
+    fclose(dst);
+    return;
+}
+
 VOID Fini(INT32 code, VOID* v)
 {
-    fprintf(stderr, "pid %d\n", getpid());
-    char command[256];
-    scanf("%s", command);
-    sprintf(command, "cp /proc/%d/maps pinatrace.maps", getpid());
-    fprintf(stderr, "%s", command);
-    int ret = system(command);
-    int errsv = errno;
-    if (ret < 0)
-        fprintf(stderr, "ret: %d, errno: %d\n", ret, errsv);
-
+    copyProcMaps();
     fprintf(trace, "Count %llu\n", icount);
     fprintf(trace, "#eof\n");
     fclose(trace);
