@@ -1,5 +1,5 @@
 ifndef PIN_ROOT
-$(error env $PIN_ROOT is not set.)
+$(error env PIN_ROOT is not set.)
 # Tested with pin version 3.19.)
 # Download pin "https://software.intel.com/content/www/us/en/develop/articles/pin-a-binary-instrumentation-tool-downloads.html".)
 endif

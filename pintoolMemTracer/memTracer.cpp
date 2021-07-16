@@ -18,39 +18,22 @@
 #include <stdio.h>
 #include "pin.H"
 
-// The running count of instructions is kept here
-// make it static to help the compiler optimize docount
-static unsigned long long icount = 0;
-
-// This function is called before every block
-// Use the fast linkage for calls
-VOID PIN_FAST_ANALYSIS_CALL docount(ADDRINT c) { icount += c; }
-
-// Pin calls this function every time a new basic block is encountered
-// It inserts a call to docount
-VOID Trace(TRACE arg_trace, VOID* v)
-{
-    // Visit every basic block  in the arg_trace
-    for (BBL bbl = TRACE_BblHead(arg_trace); BBL_Valid(bbl); bbl = BBL_Next(bbl))
-    {
-        // Insert a call to docount for every bbl, passing the number of instructions.
-        // IPOINT_ANYWHERE allows Pin to schedule the call anywhere in the bbl to obtain best performance.
-        // Use a fast linkage for the call.
-        BBL_InsertCall(bbl, IPOINT_ANYWHERE, AFUNPTR(docount), IARG_FAST_ANALYSIS_CALL, IARG_UINT32, BBL_NumIns(bbl), IARG_END);
-    }
-}
-
-FILE* trace;
+#define unlikely(x) __builtin_expect((x), 0)
+static FILE *trace;
+static unsigned int samplingCount = 0;
+#define SAMPLING_THRESHOLD (1 << 16) // 64k
 
 // Print a memory read record
 VOID RecordMemRead(VOID *ip, VOID *addr, UINT32 size)
 {
+    samplingCount++;
     fprintf(trace, "%p %8x 0 %u %p\n", ip, *(UINT32 *)ip, size, addr);
 }
 
 // Print a memory write record
 VOID RecordMemWrite(VOID *ip, VOID *addr, UINT32 size)
 {
+    samplingCount++;
     fprintf(trace, "%p %8x 1 %u %p\n", ip, *(UINT32 *)ip, size, addr);
 }
 
@@ -69,16 +52,26 @@ VOID Instruction(INS ins, VOID* v)
     {
         if (INS_MemoryOperandIsRead(ins, memOp))
         {
-            INS_InsertPredicatedCall(ins, IPOINT_BEFORE, (AFUNPTR)RecordMemRead, IARG_INST_PTR, IARG_MEMORYOP_EA, memOp, IARG_MEMORYREAD_SIZE,
-                                     IARG_END);
+            if (unlikely(samplingCount == SAMPLING_THRESHOLD))
+            {
+                samplingCount = 0;
+                INS_InsertPredicatedCall(
+                    ins, IPOINT_BEFORE, (AFUNPTR)RecordMemRead, IARG_INST_PTR,
+                    IARG_MEMORYOP_EA, memOp, IARG_MEMORYREAD_SIZE, IARG_END);
+            }
         }
         // Note that in some architectures a single memory operand can be
         // both read and written (for instance incl (%eax) on IA-32)
         // In that case we instrument it once for read and once for write.
         if (INS_MemoryOperandIsWritten(ins, memOp))
         {
-            INS_InsertPredicatedCall(ins, IPOINT_BEFORE, (AFUNPTR)RecordMemWrite, IARG_INST_PTR, IARG_MEMORYOP_EA, memOp, IARG_MEMORYWRITE_SIZE,
-                                     IARG_END);
+            if (unlikely(samplingCount == SAMPLING_THRESHOLD))
+            {
+                samplingCount = 0;
+                INS_InsertPredicatedCall(
+                    ins, IPOINT_BEFORE, (AFUNPTR)RecordMemWrite, IARG_INST_PTR,
+                    IARG_MEMORYOP_EA, memOp, IARG_MEMORYWRITE_SIZE, IARG_END);
+            }
         }
     }
 }
@@ -126,7 +119,6 @@ void copyProcMaps(void)
 VOID Fini(INT32 code, VOID* v)
 {
     copyProcMaps();
-    fprintf(trace, "Count %llu\n", icount);
     fprintf(trace, "#eof\n");
     fclose(trace);
 }
@@ -152,7 +144,6 @@ int main(int argc, char* argv[])
     trace = fopen("pinatrace.out", "w");
 
     INS_AddInstrumentFunction(Instruction, 0);
-    TRACE_AddInstrumentFunction(Trace, 0);
     PIN_AddFiniFunction(Fini, 0);
 
     // Never returns
