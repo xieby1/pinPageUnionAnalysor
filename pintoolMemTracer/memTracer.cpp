@@ -27,14 +27,22 @@ static unsigned int samplingCount = 0;
 VOID RecordMemRead(VOID *ip, VOID *addr, UINT32 size)
 {
     samplingCount++;
-    fprintf(trace, "%p %8x 0 %u %p\n", ip, *(UINT32 *)ip, size, addr);
+    if (unlikely(samplingCount==SAMPLING_THRESHOLD))
+    {
+        samplingCount = 0;
+        fprintf(trace, "%p %8x 0 %u %p\n", ip, *(UINT32 *)ip, size, addr);
+    }
 }
 
 // Print a memory write record
 VOID RecordMemWrite(VOID *ip, VOID *addr, UINT32 size)
 {
     samplingCount++;
-    fprintf(trace, "%p %8x 1 %u %p\n", ip, *(UINT32 *)ip, size, addr);
+    if (unlikely(samplingCount==SAMPLING_THRESHOLD))
+    {
+        samplingCount = 0;
+        fprintf(trace, "%p %8x 1 %u %p\n", ip, *(UINT32 *)ip, size, addr);
+    }
 }
 
 // Is called for every instruction and instruments reads and writes
@@ -52,26 +60,18 @@ VOID Instruction(INS ins, VOID* v)
     {
         if (INS_MemoryOperandIsRead(ins, memOp))
         {
-            if (unlikely(samplingCount == SAMPLING_THRESHOLD))
-            {
-                samplingCount = 0;
-                INS_InsertPredicatedCall(
+            INS_InsertPredicatedCall(
                     ins, IPOINT_BEFORE, (AFUNPTR)RecordMemRead, IARG_INST_PTR,
                     IARG_MEMORYOP_EA, memOp, IARG_MEMORYREAD_SIZE, IARG_END);
-            }
         }
         // Note that in some architectures a single memory operand can be
         // both read and written (for instance incl (%eax) on IA-32)
         // In that case we instrument it once for read and once for write.
         if (INS_MemoryOperandIsWritten(ins, memOp))
         {
-            if (unlikely(samplingCount == SAMPLING_THRESHOLD))
-            {
-                samplingCount = 0;
-                INS_InsertPredicatedCall(
+            INS_InsertPredicatedCall(
                     ins, IPOINT_BEFORE, (AFUNPTR)RecordMemWrite, IARG_INST_PTR,
                     IARG_MEMORYOP_EA, memOp, IARG_MEMORYWRITE_SIZE, IARG_END);
-            }
         }
     }
 }
