@@ -18,16 +18,19 @@
 #include <stdio.h>
 #include "pin.H"
 
+// global variables
 #define unlikely(x) __builtin_expect((x), 0)
 static FILE *trace;
 static unsigned int samplingCount = 0;
-#define SAMPLING_THRESHOLD (1 << 16) // 64k
+
+// command line options
+KNOB <unsigned int> KnobSampleRate(KNOB_MODE_WRITEONCE, "pintool", "r", "65536", "sample rate: sample per <s> memory accesses");
 
 // Print a memory read record
 VOID RecordMemRead(VOID *ip, VOID *addr, UINT32 size)
 {
     samplingCount++;
-    if (unlikely(samplingCount==SAMPLING_THRESHOLD))
+    if (unlikely(samplingCount==KnobSampleRate.Value()))
     {
         samplingCount = 0;
         fprintf(trace, "%p %8x 0 %u %p\n", ip, *(UINT32 *)ip, size, addr);
@@ -38,7 +41,7 @@ VOID RecordMemRead(VOID *ip, VOID *addr, UINT32 size)
 VOID RecordMemWrite(VOID *ip, VOID *addr, UINT32 size)
 {
     samplingCount++;
-    if (unlikely(samplingCount==SAMPLING_THRESHOLD))
+    if (unlikely(samplingCount==KnobSampleRate.Value()))
     {
         samplingCount = 0;
         fprintf(trace, "%p %8x 1 %u %p\n", ip, *(UINT32 *)ip, size, addr);
@@ -119,7 +122,6 @@ void copyProcMaps(void)
 VOID Fini(INT32 code, VOID* v)
 {
     copyProcMaps();
-    fprintf(trace, "#eof\n");
     fclose(trace);
 }
 
