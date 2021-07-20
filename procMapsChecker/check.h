@@ -7,8 +7,6 @@
 #include "proc_maps_parser/pmparser.h"
 
 typedef uintptr_t puc_addr;
-// Size in power form. E.g. 16k = 2^14
-typedef uint8_t puc_pow_size;
 typedef struct
 {
     procmaps_struct *map;
@@ -23,6 +21,9 @@ typedef struct
 procmaps_iterator *maps_iter;
 procmaps_stat_struct *maps_stat_array;
 uint32_t maps_len;
+// Host/Guest Page Size
+#define HPS (1 << 14)
+#define GPS (1 << 12)
 
 /**
  * @brief Initialize PUC maps related data structures
@@ -43,6 +44,6 @@ int PUC_exit(void);
  * @param hps2 Host Page Size in power form
  * @return Safe 1, unsafe 0
  */
-int PUC_is_safe(puc_addr addr, puc_pow_size gps2, puc_pow_size hps2);
+int PUC_is_safe(puc_addr addr);
 
 #endif // H_PAGEUNIONCHECKER

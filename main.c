@@ -34,20 +34,17 @@ int main(int argc, char **argv)
         return -1;
     }
 
-    int count_safe=0, count_unsafe=0;
+    int count_safe = 0, count_unsafe = 0;
     memcount_record mcr;
     const char *scanfmt =
         "%" SCNxPTR "%" SCNx32 "%" SCNu8 "%" SCNu8 "%" SCNxPTR;
     while (fscanf(FILE_memcount, scanfmt, &mcr.pc, &mcr.inst, &mcr.rw,
-                          &mcr.size, &mcr.addr) == NUM_MEMBER_MC_REC)
+                  &mcr.size, &mcr.addr) == NUM_MEMBER_MC_REC)
     {
-//        fprintf(stdout,
-//                "%" PRIxPTR " %" PRIu32 "%" PRIu8 "%" PRIu8 "%" PRIuPTR "\n",
-//                mcr.pc, mcr.inst, mcr.rw, mcr.size, mcr.addr);
-        if ( PUC_is_safe(mcr.addr, 12, 14) )
-            count_safe ++;
+        if (PUC_is_safe(mcr.addr))
+            count_safe++;
         else
-            count_unsafe ++;
+            count_unsafe++;
     }
 
     fprintf(stdout, "safe %d unsafe %d\n", count_safe, count_unsafe);

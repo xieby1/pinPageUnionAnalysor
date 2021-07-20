@@ -55,7 +55,7 @@ static int cmp_map(const void *a1, const void *a2)
 static char get_perm(puc_addr addr)
 {
     procmaps_stat_struct *smap = bsearch(&addr, maps_stat_array, maps_len,
-                                   sizeof(procmaps_stat_struct), cmp_map);
+                                         sizeof(procmaps_stat_struct), cmp_map);
 
     if (smap == NULL)
         return -1;
@@ -63,22 +63,20 @@ static char get_perm(puc_addr addr)
         return smap->map->rwxp;
 }
 
-int PUC_is_safe(puc_addr addr, puc_pow_size gps2, puc_pow_size hps2)
+int PUC_is_safe(puc_addr addr)
 {
-    if (gps2 >= hps2)
+    if (GPS >= HPS)
         return 1;
     // Host Page Mask
-    puc_addr hpm = ~((1 << hps2) - 1);
-    // Guest Page Size
-    puc_addr gps = 1 << gps2;
+    puc_addr hpm = ~(HPS - 1);
     // Number of Guest pages in a Host pages
-    int ngh = 1 << (hps2 - gps2);
+    int ngh = HPS / GPS;
 
     addr &= hpm;
 
     char perm = get_perm(addr);
     for (int i = 1; i < ngh; i++)
-        if (perm != get_perm(addr + i * gps))
+        if (perm != get_perm(addr + i * GPS))
             return 0;
     return 1;
 }
