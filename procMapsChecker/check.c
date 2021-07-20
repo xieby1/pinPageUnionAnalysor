@@ -2,6 +2,7 @@
 
 int PUC_init(char *maps_file)
 {
+    // calc maps len
     maps_len = 0;
     maps_iter = pmparser_parse_file(maps_file);
     for (procmaps_struct *map = pmparser_head(maps_iter); map != NULL;
@@ -10,9 +11,9 @@ int PUC_init(char *maps_file)
         maps_len++;
     }
 
-    // make sure the maps_stat_array are zeroed out
+    // init map stat
+    /// make sure the maps_stat_array are zeroed out
     maps_stat_array = calloc(maps_len, sizeof(procmaps_stat_struct));
-
     int i = 0;
     for (procmaps_struct *map = pmparser_head(maps_iter); map != NULL;
          map = pmparser_next(maps_iter), i++)
@@ -24,6 +25,9 @@ int PUC_init(char *maps_file)
         maps_stat_array[i].higher_host_page_tag =
             (uintptr_t)map->addr_end & MASK_HPTag;
     }
+
+    // init others
+    count_safe = count_unsafe = 0;
 
     return 0;
 }
@@ -105,8 +109,42 @@ int PUC_stat(puc_addr addr)
                     fprintf(stderr,
                             "warn: midlle unsafe not supposed to exist!\n");
             }
+            count_unsafe++;
             return 0;
         }
     }
+    if (smap)
+        smap->count_safe++;
+    count_safe++;
     return 1;
+}
+
+void PUC_print_stat(void)
+{
+    printf("%8s = [%8s, %8s]\n", "both", "lower", "higher");
+    uint32_t count_recorded_safe = 0;
+    uint32_t count_recorded_unsafe = 0;
+    for (int i = 0; i < maps_len; i++)
+    {
+        // safe, lower_unsafe, higher_unsafe, all_unsafe
+        uint32_t s, l, h, a;
+        s = maps_stat_array[i].count_safe;
+        l = maps_stat_array[i].count_lower_unsafe;
+        h = maps_stat_array[i].count_higher_unsafe;
+        a = l + h;
+
+        count_recorded_safe += s;
+        count_recorded_unsafe += a;
+
+        if (a)
+            printf("%8d = [%8d, %8d]\n", a, l, h);
+    }
+
+    // summary
+    printf("summary:\n");
+    printf("%8s%12s%12s\n", "", "recorded", "unrecorded");
+    printf("%8s%12d%12d\n", "safe", count_recorded_safe,
+           count_safe - count_recorded_safe);
+    printf("%8s%12d%12d\n", "unsafe", count_recorded_unsafe,
+           count_unsafe - count_recorded_unsafe);
 }

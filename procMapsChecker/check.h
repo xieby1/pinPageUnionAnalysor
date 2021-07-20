@@ -22,6 +22,7 @@ typedef struct
 procmaps_iterator *maps_iter;
 procmaps_stat_struct *maps_stat_array;
 uint32_t maps_len;
+uint32_t count_safe, count_unsafe; // global
 // Host/Guest Page Size
 #define HPS (1 << 14)
 #define GPS (1 << 12)
@@ -43,5 +44,10 @@ int PUC_exit(void);
  * return 1 if this addr is safe, 0 if not safe.
  */
 int PUC_stat(puc_addr addr);
+
+/**
+ * @brief print stat to stdout
+ */
+void PUC_print_stat(void);
 
 #endif // H_PAGEUNIONCHECKER
