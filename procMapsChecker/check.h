@@ -11,10 +11,11 @@ typedef struct
 {
     procmaps_struct *map;
     // stats
-    /// bool
-    uint8_t page_union_over_16k_boundary;
-    /// bool
-    uint8_t page_union_prot_unmatch[2]; // lower, higher
+    uintptr_t lower_host_page_tag;
+    uintptr_t higher_host_page_tag;
+    uint32_t count_lower_unsafe;
+    uint32_t count_higher_unsafe;
+    uint32_t count_safe;
 } procmaps_stat_struct;
 
 // Global variables
@@ -24,6 +25,7 @@ uint32_t maps_len;
 // Host/Guest Page Size
 #define HPS (1 << 14)
 #define GPS (1 << 12)
+#define MASK_HPTag (~(HPS - 1))
 
 /**
  * @brief Initialize PUC maps related data structures
@@ -37,13 +39,9 @@ int PUC_init(char *maps_file);
 int PUC_exit(void);
 
 /**
- * @brief Check whether a given `addr` is safe, with a given guest page size
- * `gps` and host page size `hps`
- * @param addr The addr to be checked
- * @param gps2 Guest Page Size in power form
- * @param hps2 Host Page Size in power form
- * @return Safe 1, unsafe 0
+ * @brief For a given addr, generate its stat in its procmaps_stat_struct,
+ * return 1 if this addr is safe, 0 if not safe.
  */
-int PUC_is_safe(puc_addr addr);
+int PUC_stat(puc_addr addr);
 
 #endif // H_PAGEUNIONCHECKER

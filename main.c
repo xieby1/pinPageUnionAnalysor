@@ -41,7 +41,7 @@ int main(int argc, char **argv)
     while (fscanf(FILE_memcount, scanfmt, &mcr.pc, &mcr.inst, &mcr.rw,
                   &mcr.size, &mcr.addr) == NUM_MEMBER_MC_REC)
     {
-        if (PUC_is_safe(mcr.addr))
+        if (PUC_stat(mcr.addr))
             count_safe++;
         else
             count_unsafe++;
