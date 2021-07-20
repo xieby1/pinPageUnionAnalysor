@@ -9,10 +9,19 @@
 typedef uintptr_t puc_addr;
 // Size in power form. E.g. 16k = 2^14
 typedef uint8_t puc_pow_size;
+typedef struct
+{
+    procmaps_struct *map;
+    // stats
+    /// bool
+    uint8_t page_union_over_16k_boundary;
+    /// bool
+    uint8_t page_union_prot_unmatch[2]; // lower, higher
+} procmaps_stat_struct;
 
 // Global variables
 procmaps_iterator *maps_iter;
-procmaps_struct **maps_array;
+procmaps_stat_struct *maps_stat_array;
 uint32_t maps_len;
 
 /**

@@ -1,6 +1,5 @@
 #ifndef H_MEMCOUNT_PAGEUNIONCHECKER
 #define H_MEMCOUNT_PAGEUNIONCHECKER
-#include <stdbool.h>
 #include <stdint.h>
 
 #define NUM_MEMBER_MC_REC 5

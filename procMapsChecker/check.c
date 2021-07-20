@@ -10,13 +10,13 @@ int PUC_init(char *maps_file)
         maps_len++;
     }
 
-    maps_array = malloc(maps_len * sizeof(procmaps_struct *));
+    maps_stat_array = malloc(maps_len * sizeof(procmaps_stat_struct));
 
     int i = 0;
     for (procmaps_struct *map = pmparser_head(maps_iter); map != NULL;
          map = pmparser_next(maps_iter), i++)
     {
-        maps_array[i] = map;
+        maps_stat_array[i].map = map;
     }
 
     return 0;
@@ -24,7 +24,7 @@ int PUC_init(char *maps_file)
 
 int PUC_exit(void)
 {
-    free(maps_array);
+    free(maps_stat_array);
 
     return 0;
 }
@@ -33,16 +33,16 @@ int PUC_exit(void)
  * @brief Compare key (first arg) and arrary member (second arg), according to
  * manual
  * @param a1 Addr to be checked
- * @param a2 A map structure in maps_array
+ * @param a2 A map stat structure in maps_stat_array
  */
 static int cmp_map(const void *a1, const void *a2)
 {
     puc_addr *paddr = (puc_addr *)a1;
-    procmaps_struct **ppmap = (procmaps_struct **)a2;
+    procmaps_struct *pmap = ((procmaps_stat_struct *)a2)->map;
 
-    if ((*paddr) < (puc_addr)(*ppmap)->addr_start)
+    if ((*paddr) < (puc_addr)(pmap->addr_start))
         return -1;
-    else if ((*paddr) < (puc_addr)(*ppmap)->addr_end)
+    else if ((*paddr) < (puc_addr)(pmap->addr_end))
         return 0;
     else
         return 1;
@@ -54,13 +54,13 @@ static int cmp_map(const void *a1, const void *a2)
  */
 static char get_perm(puc_addr addr)
 {
-    procmaps_struct *map = bsearch(&addr, maps_array, maps_len,
-                                   sizeof(procmaps_struct *), cmp_map);
+    procmaps_stat_struct *smap = bsearch(&addr, maps_stat_array, maps_len,
+                                   sizeof(procmaps_stat_struct), cmp_map);
 
-    if (map == NULL)
+    if (smap == NULL)
         return -1;
     else
-        return map->rwxp;
+        return smap->map->rwxp;
 }
 
 int PUC_is_safe(puc_addr addr, puc_pow_size gps2, puc_pow_size hps2)
