@@ -1,6 +1,7 @@
 #ifndef H_PAGEUNIONCHECKER
 #define H_PAGEUNIONCHECKER
 
+#include <math.h> // log2
 #include <stdint.h>
 #include <stdlib.h> // bsearch
 
@@ -27,6 +28,7 @@ uint32_t count_safe, count_unsafe; // global
 #define HPS (1 << 14)
 #define GPS (1 << 12)
 #define MASK_HPTag (~(HPS - 1))
+double entropy = 0;
 
 /**
  * @brief Initialize PUC maps related data structures

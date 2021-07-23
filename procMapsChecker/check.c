@@ -126,18 +126,38 @@ void PUC_print_stat(void)
     uint32_t count_recorded_unsafe = 0;
     for (int i = 0; i < maps_len; i++)
     {
-        // safe, lower_unsafe, higher_unsafe, all_unsafe
-        uint32_t s, l, h, a;
+        // safe, lower_unsafe, higher_unsafe, both_unsafe
+        uint32_t s, l, h, b;
         s = maps_stat_array[i].count_safe;
         l = maps_stat_array[i].count_lower_unsafe;
         h = maps_stat_array[i].count_higher_unsafe;
-        a = l + h;
+        b = l + h;
 
         count_recorded_safe += s;
-        count_recorded_unsafe += a;
+        count_recorded_unsafe += b;
 
-        if (a)
-            printf("%8d = [%8d, %8d]\n", a, l, h);
+        if (b)
+            printf("%8d = [%8d, %8d]\n", b, l, h);
+    }
+
+    // calc entropy
+    for (int i = 0; i < maps_len; i++)
+    {
+        // lower_unsafe, higher_unsafe, all_unsafe
+        uint32_t l, h, a;
+        l = maps_stat_array[i].count_lower_unsafe;
+        h = maps_stat_array[i].count_higher_unsafe;
+        a = count_recorded_unsafe;
+        if (l)
+        {
+            double p = (double)l / a;
+            entropy -= p * log2(p);
+        }
+        if (h)
+        {
+            double p = (double)h / a;
+            entropy -= p * log2(p);
+        }
     }
 
     // summary
@@ -147,4 +167,5 @@ void PUC_print_stat(void)
            count_safe - count_recorded_safe);
     printf("%8s%12d%12d\n", "unsafe", count_recorded_unsafe,
            count_unsafe - count_recorded_unsafe);
+    printf("information entropy %f\n", entropy);
 }

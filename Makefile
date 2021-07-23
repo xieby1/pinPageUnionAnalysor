@@ -19,7 +19,7 @@ ${DIR_TRACE}: FORCE
 	PIN_ROOT="${PIN_ROOT}" make -C $@
 
 ${EXE}: main.o libcheck.a
-	${CC} ${CFLAGS} main.o -L${DIR_CHECK} -lcheck -o $@
+	${CC} ${CFLAGS} main.o -L${DIR_CHECK} -lcheck -lm -o $@
 
 libcheck.a: FORCE
 	make -C ${DIR_CHECK}
